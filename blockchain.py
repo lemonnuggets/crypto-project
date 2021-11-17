@@ -27,7 +27,7 @@ class Record:
         self.signature = signature
 
     def __str__(self) -> str:
-        return f"{self.signatory_key} {self.signature} {self.data}"
+        return f"{self.signatory_key};{self.signature};{self.data}"
 
     def verify(self) -> bool:
         return verify(self.data, self.signature, self.signatory_key)
@@ -65,8 +65,9 @@ class Blockchain:
         genesis_block = Block(0, time.time(), "Genesis Block", "0")
         self.chain.append(genesis_block)
 
-    def add_block(self, record, signature, public_key):
-        if verify(record, signature, public_key):
+    def add_block(self, data, signature, public_key):
+        record = Record(public_key, signature, data)
+        if record.verify():
             previous_hash = self.chain[-1].hash
             block = Block(len(self.chain), time.time(), record, previous_hash)
             self.chain.append(block)
