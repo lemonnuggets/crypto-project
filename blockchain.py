@@ -3,11 +3,14 @@ import time
 import dss
 
 DIFFICULTY = 4
+
+
 def verify(record, signature, public_key):
     """
     Verify the signature of a record.
     """
     return dss.verification(record, signature.r, signature.s, public_key)
+
 
 class Signature:
     def __init__(self, message, private_key):
@@ -17,7 +20,7 @@ class Signature:
         return self.r, self.s
 
     def __str__(self):
-        return f'{self.r},{self.s}'
+        return f"{self.r},{self.s}"
 
 
 class Record:
@@ -32,6 +35,7 @@ class Record:
     def verify(self) -> bool:
         return verify(self.data, self.signature, self.signatory_key)
 
+
 class Block:
     def __init__(self, index, timestamp, data, previous_hash):
         self.index = index
@@ -44,17 +48,22 @@ class Block:
 
     def hash_block(self):
         sha = hashlib.sha256()
-        sha.update(f'{str(self.index)}{str(self.timestamp)}{str(self.timestamp)}{str(self.data)}{str(self.previous_hash)}{str(self.nonce)}'.encode('utf-8'))
+        sha.update(
+            f"{str(self.index)}{str(self.timestamp)}{str(self.timestamp)}{str(self.data)}{str(self.previous_hash)}{str(self.nonce)}".encode(
+                "utf-8"
+            )
+        )
         return sha.hexdigest()
 
     def mine_block(self, difficulty):
-        while self.hash[:difficulty] != '0' * difficulty:
+        while self.hash[:difficulty] != "0" * difficulty:
             self.nonce += 1
             self.hash = self.hash_block()
             # print(self.hash, self.nonce)
 
     def __str__(self) -> str:
-        return f'Block:\n\tIndex = {self.index},\n\tTimestamp = {self.timestamp},\n\tData = {self.data},\n\tPrevious Hash = {self.previous_hash},\n\tHash = {self.hash},\n\tNonce = {self.nonce}'
+        return f"Block:\n\tIndex = {self.index},\n\tTimestamp = {self.timestamp},\n\tData = {self.data},\n\tPrevious Hash = {self.previous_hash},\n\tHash = {self.hash},\n\tNonce = {self.nonce}"
+
 
 class Blockchain:
     def __init__(self):
@@ -71,9 +80,9 @@ class Blockchain:
             previous_hash = self.chain[-1].hash
             block = Block(len(self.chain), time.time(), record, previous_hash)
             self.chain.append(block)
-            return {'status': 'success', 'block': block}
+            return {"status": "success", "block": block}
         else:
-            return {'status': 'failure', 'reason': 'invalid signature'}
+            return {"status": "failure", "reason": "invalid signature"}
 
     def __str__(self) -> str:
         print_str = ""
@@ -81,6 +90,7 @@ class Blockchain:
         for block in self.chain:
             print_str += str(block) + "\n"
         return print_str
+
 
 if __name__ == "__main__":
     blockchain = Blockchain()
