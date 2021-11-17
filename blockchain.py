@@ -71,7 +71,10 @@ class Blockchain:
         self.create_genesis_block()
 
     def create_genesis_block(self):
-        genesis_block = Block(0, time.time(), "Genesis Block", "0")
+        message = "Genesis Block"
+        user = User("USER 0")
+        record = Record(user.get_public_key(), user.sign(message), message)
+        genesis_block = Block(0, time.time(), record, "0")
         self.chain.append(genesis_block)
 
     def add_block(self, data, signature, public_key):
@@ -92,16 +95,46 @@ class Blockchain:
         return print_str
 
 
+class User:
+    def __init__(self, name):
+        self.name = name
+        self.private_key, self.public_key = dss.userKeys()
+
+    def sign(self, data):
+        return Signature(data, self.private_key)
+
+    def get_public_key(self):
+        return self.public_key
+
+    def __str__(self) -> str:
+        return f"User {self.name}:\n\tPublic Key = {self.public_key},\n\tPrivate Key = {self.private_key}"
+
+
 if __name__ == "__main__":
     blockchain = Blockchain()
-    print(blockchain)
-    print("Adding blocks...")
-    private_key, public_key = dss.userKeys()
-    # signatory_private_key, signatory_public_key = dss.userKeys()
+
+    adam = User("Adam")
     message = "Hello, world!"
-    signature = Signature(message, private_key)
-    blockchain.add_block(message, signature, public_key)
-    # blockchain.add_block("Record 1", "Signature 1", "Public Key 1")
-    # blockchain.add_block("Record 2", "Signature 2", "Public Key 2")
-    # blockchain.add_block("Record 3", "Signature 3", "Public Key 3")
+    signature = adam.sign(message)
+    blockchain.add_block(message, signature, adam.get_public_key())
+
+    preet = User("Preet")
+    message = "Hello, world!"
+    signature = preet.sign(message)
+    blockchain.add_block(message, signature, preet.get_public_key())
+
+    aditya = User("Aditya")
+    message = "Hello, world!"
+    signature = aditya.sign(message)
+    blockchain.add_block(message, signature, aditya.get_public_key())
+
+    ibrahim = User("Ibrahim")
+    message = "Hello, world!"
+    signature = ibrahim.sign(message)
+    blockchain.add_block(message, signature, ibrahim.get_public_key())
+
+    print(adam)
+    print(preet)
+    print(aditya)
+    print(ibrahim)
     print(blockchain)
