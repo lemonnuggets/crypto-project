@@ -17,7 +17,7 @@ class Signature:
         return self.r, self.s
 
     def __str__(self):
-        return f'{r},{s}'
+        return f'{self.r},{self.s}'
 
 
 class Record:
