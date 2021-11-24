@@ -89,7 +89,7 @@ def verification(message, r, s, y):
         return False
 
 
-# global_var = initializationOfParams()
+global_var = initializationOfParams()
 if __name__ == "__main__":
     keys = userKeys()
     # P,Q,G are the global variables

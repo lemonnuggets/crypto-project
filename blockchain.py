@@ -8,8 +8,6 @@ import json
 DIFFICULTY = 4
 MAX_BLOCK_SIZE = 2
 MAX_CHUNK_SIZE = 2
-# print(dss.initializationOfParams())
-dss.initializationOfParams()
 
 
 def verify(message, signature, public_key):
