@@ -25,11 +25,7 @@
 </style>
 
 {% endblock %} {% block body %}
-
-<!-- <font color="white", align=center, font-family:verdana> -->
-
-<!-- //</font> -->
-<center>
+<div>
     <br /><br /><br />
     <table
         style="
@@ -70,6 +66,7 @@
                         id="password"
                         name="password"
                     /><br />
+                    <br>
                     <input type="submit" value="Login" />
                 </form>
             </td>
@@ -125,12 +122,13 @@
                         <option value="doctor">Doctor</option>
                         <option value="administrator">Administrator</option>
                     </select>
-                    <input type="text" id="type_signup" name="type" /><br /><br />
+                    <br>
+                    <br>
                     <input type="submit" value="Signup" />
                 </form>
             </td>
         </tr>
     </table>
-</center>
+</div>
 
 {% endblock %}
