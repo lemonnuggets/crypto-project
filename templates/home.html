@@ -1,0 +1,46 @@
+{% extends "base.html" %} {% block head %}
+<title>Home</title>
+<style>
+    a:link {
+        color: rgb(255, 255, 255);
+        background-color: transparent;
+        text-decoration: none;
+    }
+    a:visited {
+        color: rgb(255, 255, 255);
+        background-color: transparent;
+        text-decoration: none;
+    }
+    a:hover {
+        color: rgb(243, 194, 255);
+        background-color: transparent;
+        text-decoration: underline;
+    }
+    a:active {
+        color: rgb(110, 68, 105);
+        background-color: transparent;
+        text-decoration: underline;
+    }
+</style>
+{% endblock %} {% block body %}
+<center>
+    <img src="{{ url_for('static', filename='HealthBlok.png') }}" alt="Home page pic" style="width: 90%" />
+    <table
+        style="
+            text-align: center;
+            color: rgb(255, 255, 255);
+            font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande',
+                'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+        "
+        ,
+        bgcolor="#7B33FF"
+        ,
+        width="90%,"
+        height="20px,"
+    >
+        <tr>
+            <td><h3>A Healthy revolution</h3></td>
+        </tr>
+    </table>
+</center>
+{% endblock %}

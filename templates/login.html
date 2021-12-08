@@ -1,0 +1,136 @@
+{% extends "base.html" %} {% block head %}
+
+<title>Login</title>
+<style>
+    a:link {
+        color: rgb(255, 255, 255);
+        background-color: transparent;
+        text-decoration: none;
+    }
+    a:visited {
+        color: rgb(255, 255, 255);
+        background-color: transparent;
+        text-decoration: none;
+    }
+    a:hover {
+        color: rgb(243, 194, 255);
+        background-color: transparent;
+        text-decoration: underline;
+    }
+    a:active {
+        color: rgb(110, 68, 105);
+        background-color: transparent;
+        text-decoration: underline;
+    }
+</style>
+
+{% endblock %} {% block body %}
+
+<!-- <font color="white", align=center, font-family:verdana> -->
+
+<!-- //</font> -->
+<center>
+    <br /><br /><br />
+    <table
+        style="
+            text-align: center;
+            color: rgb(0, 0, 0);
+            font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande',
+                'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+            background-color: rgb(233, 233, 233);
+            border-width: 2px;
+            border-style: solid;
+            border-color: rgb(106, 188, 255);
+        "
+        ,
+        width="600px,"
+        height="300px,"
+    >
+        <tr>
+            <td
+                style="
+                    background-color: #7b33ff;
+                    height: 15px;
+                    padding-bottom: 0px;
+                    padding-top: 0px;
+                    color: white;
+                "
+            >
+                <h3>LogIn</h3>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <form action="/api/login" method="post">
+                    <label for="username">Username:</label>
+                    <input type="username" id="username" name="username" /><br />
+                    <label for="password">Password:</label>
+                    <input
+                        type="password"
+                        id="password"
+                        name="password"
+                    /><br />
+                    <input type="submit" value="Login" />
+                </form>
+            </td>
+        </tr>
+    </table>
+    <br />
+    <br />
+    <br />
+    <table
+        style="
+            text-align: center;
+            color: rgb(0, 0, 0);
+            font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande',
+                'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+            background-color: rgb(233, 233, 233);
+            border-width: 2px;
+            border-style: solid;
+            border-color: rgb(106, 188, 255);
+        "
+        ,
+        width="600px,"
+        height="300px,"
+    >
+        <tr>
+            <td
+                style="
+                    background-color: #7b33ff;
+                    height: 15px;
+                    padding-bottom: 0px;
+                    padding-top: 0px;
+                    color: white;
+                "
+            >
+                <h3>SignUp</h3>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <form action="/api/signup" method="post">
+                    <label for="username">Username:</label>
+                    <input type="username" id="username_signup" name="username" /><br />
+                    <label for="password">Password:</label>
+                    <input
+                        type="password"
+                        id="password_signup"
+                        name="password"
+                    /><br />
+                    <label for="privilege">Privilege level:</label>
+                    <input type="number" id="privilege_signup" name="privilege" min="0" max="5"/><br />
+                    <label for="type">Type:</label>
+                    <select name="type" id="type_signup">
+                        <option value="patient">Patient</option>
+                        <option value="doctor">Doctor</option>
+                        <option value="administrator">Administrator</option>
+                    </select>
+                    <input type="text" id="type_signup" name="type" /><br /><br />
+                    <input type="submit" value="Signup" />
+                </form>
+            </td>
+        </tr>
+    </table>
+</center>
+
+{% endblock %}
