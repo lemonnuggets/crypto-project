@@ -169,6 +169,68 @@ class BlockchainDB:
             os.mkdir(dir_path)
         self.load_last_chunk()
 
+    def get_records_of(self, public_key):
+        # try:
+        result = []
+        prev_chunk_no = self.chunk_no
+        self.load_last_chunk()
+        while self.chunk_no >= 0:
+            print(self.chunk_no, len(result))
+            for block in self.blockchain.chain:
+                for record in block.records:
+                    try:
+                        data = json.loads(record.data)
+                    except:
+                        data = record.data
+                    if (
+                        record.verify()
+                        and data
+                        and "public key" in data
+                        and data["public key"] == public_key
+                    ):
+                        result.append(record)
+            self.chunk_no -= 1
+            if self.chunk_no >= 0:
+                self.blockchain = pickle.load(
+                    open(self.get_chunk_path(self.chunk_no), "rb")
+                )
+        self.chunk_no = prev_chunk_no
+        return {
+            "status": "success",
+            "data": result,
+        }
+        # except Exception as e:
+        #     return {
+        #         "status": "error",
+        #         "message": "Error reading user records",
+        #     }
+
+    def get_records_signed_by(self, public_key):
+        try:
+            result = []
+            prev_chunk_no = self.chunk_no
+            self.load_last_chunk()
+            while self.chunk_no >= 0:
+                for block in self.blockchain.chain:
+                    for record in block.records:
+                        if record.verify() and record.signatory_key == public_key:
+                            result.append(record)
+                self.chunk_no -= 1
+                if self.chunk_no >= 0:
+                    self.blockchain = pickle.load(
+                        open(self.get_chunk_path(self.chunk_no), "rb")
+                    )
+            self.chunk_no = prev_chunk_no
+            return {
+                "status": "success",
+                "data": result,
+            }
+        except Exception as e:
+            return {
+                "status": "error",
+                "message": "Error reading user records",
+            }
+
     def get_chunk_path(self, chunk_no):
         return self.dir_path + "/" + str(chunk_no) + ".pickle"
 
@@ -183,9 +245,9 @@ class BlockchainDB:
             self.chunk_no = 0
             self.blockchain = Blockchain()
             return
-        print(f"loading chunk {self.chunk_no}")
+        # print(f"loading chunk {self.chunk_no}")
         self.blockchain = pickle.load(open(self.get_chunk_path(self.chunk_no), "rb"))
-        print(self.blockchain)
+        # print(self.blockchain)
 
     def save_last_chunk(self):
         pickle.dump(self.blockchain, open(self.get_chunk_path(self.chunk_no), "wb"))
@@ -303,9 +365,9 @@ if __name__ == "__main__":
         "action": "create user",
     }
     response = db.add_record(adam.sign(json.dumps(data)), adam.get_public_key(), data)
-    print(adam)
-    print(data)
-    print(response)
+    # print(adam)
+    # print(data)
+    # print(response)
 
     preet = User("Preet")
     data = {
@@ -315,9 +377,9 @@ if __name__ == "__main__":
         "action": "create user",
     }
     response = db.add_record(adam.sign(json.dumps(data)), adam.get_public_key(), data)
-    print(preet)
-    print(data)
-    print(response)
+    # print(preet)
+    # print(data)
+    # print(response)
 
     data = {
         "public key": preet.get_public_key(),
@@ -325,5 +387,15 @@ if __name__ == "__main__":
         "diagnosis": "cold",
     }
     response = db.add_record(adam.sign(json.dumps(data)), adam.get_public_key(), data)
-    print(data)
+    # print(data)
+    # print(response)
+    response = db.get_records_signed_by(adam.get_public_key())
+    print(response["data"])
+    response = db.get_records_signed_by(preet.get_public_key())
+    print(response["data"])
+    response = db.get_records_of(adam.get_public_key())
     print(response)
+    print(response["data"])
+    response = db.get_records_of(preet.get_public_key())
+    print(response)
+    print(response["data"])
