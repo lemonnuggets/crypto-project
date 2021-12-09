@@ -21,22 +21,23 @@
         background-color: transparent;
         text-decoration: underline;
     }
+    .container{
+        width: 90%;
+    }
 </style>
 {% endblock %} {% block body %}
-<div>
-    <img src="{{ url_for('static', filename='HealthBlok.png') }}" alt="Home page pic" style="width: 90%" />
+<div class="container">
+    <img src="{{ url_for('static', filename='assets/HealthBlok.png') }}" alt="Home page pic" style="width: 100%" />
     <table
         style="
             text-align: center;
             color: rgb(255, 255, 255);
             font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande',
                 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+                width: 100%;
+                height: 20px;
+                background-color: #7b33ff;
         "
-        ,
-        bgcolor="#7B33FF"
-        ,
-        width="90%,"
-        height="20px,"
     >
         <tr>
             <td><h3>A Healthy revolution</h3></td>

@@ -5,10 +5,34 @@
         <meta http-equiv="X-UA-Compatible" content="IE=edge" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <style>
+            *{
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
             body {
                 display: flex;
                 flex-direction: column;
                 align-items: center;
+            }
+            .title {
+                font-size: 30px;
+                font-family: "Arial";
+                text-align: center;
+                background-color: #7b33ff;
+                color: white;
+                width: 100%;
+                padding: 15px;
+            }
+            .container {
+                margin-top: 30px;
+                display: flex;
+                width: 80%;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                background-color: rgb(233, 233, 233);
+                padding: 0;
             }
         </style>
         {% block head %}{% endblock %}
@@ -31,9 +55,6 @@
             <tr>
                 <td>
                     <a href="home"><h3>Home</h3></a>
-                </td>
-                <td>
-                    <a href="login"><h3>LogIn/SignUp</h3></a>
                 </td>
                 <td>
                     <a href="blockchain"><h3>BlockChain</h3></a>

@@ -21,152 +21,23 @@
         background-color: transparent;
         text-decoration: underline;
     }
+    .request-form {
+        padding: 20px;
+    }
 </style>
+<script defer src="{{url_for('static', filename='js/blockchain.js')}}"></script>
 {% endblock %} {% block body %}
-<div>
-    <br /><br /><br />
-    <table
-        style="
-            text-align: center;
-            color: rgb(0, 0, 0);
-            font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande',
-                'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
-            background-color: rgb(233, 233, 233);
-            border-width: 2px;
-            border-style: solid;
-            border-color: rgb(106, 188, 255);
-        "
-        ,
-        width="600px,"
-        height="300px,"
-    >
-        <tr>
-            <td
-                style="
-                    background-color: #7b33ff;
-                    height: 15px;
-                    padding-bottom: 0px;
-                    padding-top: 0px;
-                    color: white;
-                "
-            >
-                <h3>Add Diagnosis</h3>
-            </td>
-        </tr>
-        <tr>
-            <td>
-                <form>
-                    <label for="Doc_Public key">Doctor's Public key</label>
-                    <input type="text" id="D_key" name="D_key" /><br />
-                    <label for="Pat_Public key">Patient's public key</label>
-                    <input type="text" id="P_key" name="P_key" /><br />
-                    <label for="Add Diagnosis">Diagnosis</label><br />
-                    <textarea
-                        editable="true"
-                        id="addDiag"
-                        name="addDiag"
-                        rows="5"
-                        style="width: 500px"
-                    >
-Enter Diagnosis here</textarea
-                    ><br />
-                    <label for="Add Prescription">Prescription</label><br />
-                    <textarea
-                        editable="true"
-                        id="addDiag"
-                        name="addDiag"
-                        rows="5"
-                        style="width: 500px"
-                    >
-Enter Prescription here</textarea
-                    ><br />
-                    <label for="Add Diagnosis">Hash generated</label><br />
-                    <textarea
-                        id="Hash"
-                        name="Hash"
-                        style="width: 500px"
-                        rows="1"
-                    >
-HASH</textarea
-                    ><br />
-                    <br />
-                    <input type="submit" value="Send" /><br />
-                </form>
-            </td>
-        </tr>
-    </table>
-    <br />
-    <br />
-    <br />
-    <table
-        style="
-            text-align: center;
-            color: rgb(0, 0, 0);
-            font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande',
-                'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
-            background-color: rgb(233, 233, 233);
-            border-width: 2px;
-            border-style: solid;
-            border-color: rgb(106, 188, 255);
-        "
-        ,
-        width="600px,"
-        height="300px,"
-    >
-        <tr>
-            <td
-                style="
-                    background-color: #7b33ff;
-                    height: 15px;
-                    padding-bottom: 0px;
-                    padding-top: 0px;
-                    color: white;
-                "
-            >
-                <h3>Read Diagnosis</h3>
-            </td>
-        </tr>
-        <tr>
-            <td>
-                <form>
-                    <label for="Doc_Public key"> Doctor's Public key</label>
-                    <input type="text" id="D_key" name="D_key" /><br />
-                    <label for="Pat_Public key">Patient's public key</label>
-                    <input type="text" id="P_key" name="P_key" /><br />
-                    <label for="Add Diagnosis">Diagnosis</label><br />
-                    <textarea
-                        editable="true"
-                        id="addDiag"
-                        name="addDiag"
-                        rows="5"
-                        style="width: 500px"
-                    >
- Enter Diagnosis here</textarea
-                    ><br />
-                    <label for="Add Prescription">Prescription</label><br />
-                    <textarea
-                        editable="true"
-                        id="addDiag"
-                        name="addDiag"
-                        rows="5"
-                        style="width: 500px"
-                    >
- Enter Prescription here</textarea
-                    ><br />
-                    <label for="Add Diagnosis">Hash generated</label><br />
-                    <textarea
-                        id="Hash"
-                        name="Hash"
-                        style="width: 500px"
-                        rows="1"
-                    >
- HASH</textarea
-                    ><br />
-                    <br />
-                    <input type="submit" value="Fetch" /><br />
-                </form>
-            </td>
-        </tr>
-    </table>
+<div class="container">
+    <div class="title">Make Request</div>
+    <form action="/blockchain" class="request-form">
+        <label for="action" class="action">Select action</label>
+        <select name="action" id="action" class="action">
+            <option value="none">--none--</option>
+            <option value="create_user">Create User</option>
+            <option value="delete_user">Delete User</option>
+            <option value="diagnose">Add patient diagnosis</option>
+            <option value="read">Read patient history</option>
+        </select>
+    </form>
 </div>
 {% endblock %}
