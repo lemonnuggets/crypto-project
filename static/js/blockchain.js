@@ -75,6 +75,10 @@ const diagnoseElement = () => {
         <input type="number" name="public_key" id="public_key">
         </input>
         <br/>
+        <label for="diagnosis">Diagnosis</label>
+        <input type="text" name="diagnosis" id="diagnosis">
+        </input>
+        <br/>
         <input type="submit" value="Add Diagnosis">
         </input>
     `

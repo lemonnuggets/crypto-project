@@ -24,25 +24,31 @@ def about():
 @app.route("/blockchain", methods=["GET", "POST"])
 def blockchain():
     if request.method == "POST":
+        print(request.form.to_dict())
         if request.form.get("action") == "create_user":
+            print("create user")
             return db.add_user(
                 request.form.get("name"),
-                request.form.get("privilege_level"),
+                int(request.form.get("privilege_level")),
                 request.form.get("type"),
             )
         if request.form.get("action") == "delete_user":
+            print("delete user")
             return db.delete_user(
-                request.form.get("public_key"), request.form.get("private_key")
+                int(request.form.get("public_key")),
+                int(request.form.get("private_key")),
             )
         if request.form.get("action") == "diagnose":
+            print("diagnose")
             return db.add_diagnosis(
-                request.form.get("doc_public_key"),
-                request.form.get("doc_private_key"),
-                request.form.get("public_key"),
+                int(request.form.get("doc_public_key")),
+                int(request.form.get("doc_private_key")),
+                int(request.form.get("public_key")),
                 request.form.get("diagnosis"),
             )
         if request.form.get("action") == "read":
-            return db.read_records(request.form.get("public_key"))
+            print("read")
+            return db.read_records(int(request.form.get("public_key")))
     return render_template("blockchain.html")
 
 

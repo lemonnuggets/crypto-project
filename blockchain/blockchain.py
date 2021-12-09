@@ -1,5 +1,7 @@
 import hashlib
 import time
+
+from Crypto.Util import number
 import blockchain.dss as dss
 import pickle
 import os
@@ -7,18 +9,43 @@ import json
 
 DIFFICULTY = 4
 MAX_BLOCK_SIZE = 2
-MAX_CHUNK_SIZE = 2
+MAX_CHUNK_SIZE = 5
 
 
 def verify(message, signature, public_key):
     """
     Verify the signature of a record.
     """
-    return dss.verification(message, signature.r, signature.s, public_key)
+    print("Verifying signature...")
+    if type(message) != str:
+        print("Message is not a string")
+        print(f"Message: {message} is type {type(message)}")
+        message = str(message)
+    if type(public_key) != int:
+        print("Public key is not an integer")
+        print(f"Public key: {public_key} is type {type(public_key)}")
+        public_key = int(public_key)
+    print("Message:", message, type(message))
+    print("Signature:", signature)
+    print("Public key:", public_key)
+    result = dss.verification(message, signature.r, signature.s, public_key)
+    print("Result:", result)
+    return result
 
 
 class Signature:
     def __init__(self, data, private_key):
+        print("Signing message...")
+        if type(data) != str:
+            print("Message is not a string")
+            print(f"Message: {data} is type {type(data)}")
+            data = str(data)
+        if type(private_key) != int:
+            print("Private key is not an integer")
+            print(f"Private key: {private_key} is type {type(private_key)}")
+            private_key = int(private_key)
+        print("Message:", data, type(data))
+        print("Private key:", private_key)
         self.r, self.s, _ = dss.signature(data, private_key)
 
     def get_components(self):
@@ -69,7 +96,8 @@ class Block:
     def __init__(self, index, timestamp, previous_hash, records=[]):
         self.index = index
         self.timestamp = timestamp
-        self.records = records
+        self.records = records.copy()
+        print("initially records:", self.records, records)
         self.previous_hash = previous_hash
         self.nonce = 0
         self.hash = self.hash_block()
@@ -128,9 +156,9 @@ class Blockchain:
         self.initial_hash = prev_hash
 
     def create_genesis_block(self):
-        message = "Genesis Block"
+        data = {"message": "Genesis Block"}
         user = User("USER 0")
-        record = Record(user.get_public_key(), user.sign(message), message)
+        record = Record(user.get_public_key(), user.sign(data), data)
         genesis_block = Block(0, time.time(), "0", [record])
         self.chain.append(genesis_block)
 
@@ -142,9 +170,13 @@ class Blockchain:
             prev_hash = self.chain[-1].hash
             current_block = self.chain[-1]
 
+        if len(self.chain) != 0:
+            print("current block:", current_block)
         if len(self.chain) == 0 or len(current_block.records) >= MAX_BLOCK_SIZE:
-            current_block = Block(len(self.chain), time.time(), prev_hash)
-            self.chain.append(current_block)
+            new_block = Block(len(self.chain), time.time(), prev_hash)
+            response = new_block.add_record(record)
+            self.chain.append(new_block)
+            return response
 
         response = current_block.add_record(record)
         return response
@@ -248,7 +280,7 @@ class BlockchainDB:
                     "message": "Diagnosis is not provided",
                     "error_code": "6",
                 }
-        record = Record(public_key, signature, json.dumps(data))
+        record = Record(public_key, signature, data)
         response = self.add_to_blockchain(record)
         if response["status"] == "error":
             return response
@@ -294,7 +326,7 @@ class BlockchainDB:
                 "message": "User created",
                 "data": {
                     "public_key": public_key,
-                    "private key": user.get_private_key(),
+                    "private key": user.private_key,
                     "action": "create_user",
                     "name": name,
                 },
@@ -357,10 +389,46 @@ class BlockchainDB:
                 "message": "Private key is not provided",
                 "error_code": "6",
             }
+        records = self.get_all_records_involving(public_key)
+        print("records: ", records)
+        if records["status"] == "error":
+            return records
+        if len(records["data"]) == 0:
+            return {
+                "status": "error",
+                "message": "User does not exist",
+                "error_code": "1",
+            }
+        print("Fetched records: ", records["data"])
+        print("Type of fetched records: ", type(records["data"][0]))
+        print("fetched record: ", records["data"][0])
+        records["data"].sort(key=lambda x: x["timestamp"])
+        for record in records["data"][::-1]:
+            if record["data"]["action"] == "delete_user":
+                return {
+                    "status": "error",
+                    "message": "User does not exist",
+                    "error_code": "1",
+                }
+            if (
+                record["data"]["action"] == "create_user"
+                and record["data"]["public_key"] == public_key
+            ):
+                break
+
         data = {"action": "delete_user", "public_key": public_key}
         signature = Signature(data, private_key)
-        self.users.remove(public_key)
-        return self.add_record(signature, public_key, data)
+        if public_key in self.users:
+            self.users.remove(public_key)
+        response = self.add_record(signature, public_key, data)
+        if response["status"] == "error":
+            return response
+        else:
+            return {
+                "status": "success",
+                "message": "User deleted",
+                "error_code": "0",
+            }
 
     def get_user_type(self, public_key=None):
         if public_key is None:
@@ -428,7 +496,18 @@ class BlockchainDB:
                         except:
                             data = record.data
                         if record.verify():
+                            print(
+                                "record.signatory_key: ",
+                                record.signatory_key,
+                                type(record.signatory_key),
+                            )
+                            print("public_key: ", public_key, type(public_key))
+                            print(
+                                "record.signatory_key == public_key: ",
+                                record.signatory_key == public_key,
+                            )
                             if record.signatory_key == public_key:
+                                print("Adding record: ", record.toJSON())
                                 result.append(record.toJSON())
                             if (
                                 data

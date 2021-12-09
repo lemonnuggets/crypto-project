@@ -1,6 +1,7 @@
 from Crypto.Util.number import getPrime
 from random import randint
 from hashlib import sha256
+import os
 
 P = 0
 Q = 0
@@ -8,9 +9,9 @@ G = 0
 
 
 def hashGen(message):
-    if type(message) != str:
-        message = str(message)
     # returns the hash value of the 'message' using sha256
+
+    print("Hash value of the message is: ", sha256(message.encode()).hexdigest())
     return sha256(message.encode("UTF-8")).hexdigest()
 
 
@@ -23,22 +24,28 @@ def Inverse_Mod(a, m):  # returns the inverse mod value
 
 def initializationOfParams():
     global P, Q, G
-    P = getPrime(20)  # P is prime modulus
-    Q = getPrime(10)  # Q is prime divisor
-    # Always P should be greater than Q
-    # because P-1 must be a multiple of Q
-    while (P - 1) % Q != 0:
-        P = getPrime(20)
-        Q = getPrime(10)
+    file_path = "secret.txt"
+    if os.path.exists(file_path):
+        P, Q, G = open(file_path, "r").read().split()
+        P, Q, G = int(P), int(Q), int(G)
+    else:
+        P = getPrime(20)  # P is prime modulus
+        Q = getPrime(10)  # Q is prime divisor
+        # Always P should be greater than Q
+        # because P-1 must be a multiple of Q
+        while (P - 1) % Q != 0:
+            P = getPrime(20)
+            Q = getPrime(10)
 
-    # print("Prime divisor 'Q': ",Q)
-    # print("Prime modulus 'P': ",P)
-    h = randint(1, P - 1)  # h is any random number b/w 1 and P-1
-    G = 1
-    while G == 1:
-        G = pow(h, int((P - 1) / Q)) % P  # as G>1 and not =1
-    # print("Value of G is : ",G)
-    # print(P, Q, G)
+        # print("Prime divisor 'Q': ",Q)
+        # print("Prime modulus 'P': ",P)
+        h = randint(1, P - 1)  # h is any random number b/w 1 and P-1
+        G = 1
+        while G == 1:
+            G = pow(h, int((P - 1) / Q)) % P  # as G>1 and not =1
+        # print("Value of G is : ",G)
+        # print(P, Q, G)
+        open(file_path, "w").write(str(P) + " " + str(Q) + " " + str(G))
     return (P, Q, G)
 
 
