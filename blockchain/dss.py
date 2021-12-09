@@ -11,7 +11,7 @@ G = 0
 def hashGen(message):
     # returns the hash value of the 'message' using sha256
 
-    print("Hash value of the message is: ", sha256(message.encode()).hexdigest())
+    # print("Hash value of the message is: ", sha256(message.encode()).hexdigest())
     return sha256(message.encode("UTF-8")).hexdigest()
 
 

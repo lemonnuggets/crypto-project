@@ -32,7 +32,8 @@
                 flex-direction: column;
                 justify-content: center;
                 align-items: center;
-                background-color: rgb(233, 233, 233);
+                background-color: rgb(255, 255, 255);
+                border: lightblue 1px solid;
                 padding: 0;
             }
             .header{
@@ -41,37 +42,31 @@
                 background: #7b33ff;
                 width: 90%;
                 padding: 20px;
+                display: flex;
+                justify-content: space-around;
             }
             button, input[type="submit"]{
                 background: #7b33ff;
                 color: rgb(255, 255, 255);
-                border: none;
+                border: black 1px solid;
                 padding: 10px;
                 border-radius: 5px;
                 width: 100%;
             }
             input, select{
                 padding: 10px;
-                border: none;
+                border: black 1px solid;
                 border-radius: 5px;
             }
         </style>
         {% block head %}{% endblock %}
     </head>
     <body>
-        <table class="header" >
-            <tr>
-                <td>
-                    <a href="home"><h3>Home</h3></a>
-                </td>
-                <td>
-                    <a href="blockchain"><h3>BlockChain</h3></a>
-                </td>
-                <td>
-                    <a href="about"><h3>About us</h3></a>
-                </td>
-            </tr>
-        </table>
+        <div class="header">
+            <a href="home"><h3>Home</h3></a>
+            <a href="blockchain"><h3>BlockChain</h3></a>
+            <a href="about"><h3>About us</h3></a>
+        </div>
         {% block body %}{% endblock %}
     </body>
 </html>

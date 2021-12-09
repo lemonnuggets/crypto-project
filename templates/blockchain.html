@@ -28,6 +28,12 @@
         display: flex;
         flex-direction: column;
     }
+    pre {outline: 1px solid #ccc; padding: 5px; margin: 5px; }
+    .string { color: lightcoral; }
+    .number { color: purple; }
+    .boolean { color: blue; }
+    .null { color: cyan; }
+    .key { color: darkblue; }
 </style>
 <script defer src="{{url_for('static', filename='js/blockchain.js')}}"></script>
 {% endblock %} {% block body %}
@@ -45,5 +51,12 @@
             <option value="read">Read patient history</option>
         </select>
     </form>
+</div>
+<div class="container">
+    <div class="title">
+        Response
+    </div>
+    <pre class="response-content">
+    </pre>
 </div>
 {% endblock %}

@@ -1,6 +1,7 @@
 actionElement = document.querySelector("#action");
 formElement = document.querySelector(".request-form");
 clearFormHtml = formElement.innerHTML;
+
 const clearForm = () => {
     console.log(formElement, formElement.children);
     [...formElement.children].forEach((child) => {
@@ -8,14 +9,6 @@ const clearForm = () => {
     });
 };
 
-// '<label for="action">Select action</label>' +
-// '<select name="action" id="action">' +
-// '<option value="none">--Select One--</option>' +
-// '<option value="create_user">Create User</option>' +
-// '<option value="delete_user">Delete User</option>' +
-// '<option value="diagnose">Add patient diagnosis</option>' +
-// '<option value="read">Read patient history</option>' +
-// '</select>'
 const createUserElement = () => {
     const createUserForm = document.createElement("div");
     createUserForm.classList.add("create-user-form");
@@ -35,11 +28,12 @@ const createUserElement = () => {
             <option value="doctor">Doctor</option>
         </select>
         <br/>
-        <input type="submit" value="Create User">
+        <input type="submit" value="Create User" class="submit">
         </input>
-    `
+    `;
     return createUserForm;
 };
+
 const deleteUserElement = () => {
     const deleteUserForm = document.createElement("div");
     deleteUserForm.classList.add("delete-user-form");
@@ -53,11 +47,12 @@ const deleteUserElement = () => {
         <input type="number" name="private_key" id="private_key">
         </input>
         <br/>
-        <input type="submit" value="Delete User">
+        <input type="submit" value="Delete User" class="submit">
         </input>
-    `
+    `;
     return deleteUserForm;
 };
+
 const diagnoseElement = () => {
     const diagnoseForm = document.createElement("div");
     diagnoseForm.classList.add("diagnose-form");
@@ -79,11 +74,12 @@ const diagnoseElement = () => {
         <input type="text" name="diagnosis" id="diagnosis">
         </input>
         <br/>
-        <input type="submit" value="Add Diagnosis">
+        <input type="submit" value="Add Diagnosis" class="submit">
         </input>
-    `
+    `;
     return diagnoseForm;
 };
+
 const readElement = () => {
     const readForm = document.createElement("div");
     readForm.classList.add("read-form");
@@ -93,26 +89,82 @@ const readElement = () => {
         <input type="number" name="public_key" id="public_key">
         </input>
         <br/>
-        <input type="submit" value="Read Records">
+        <input type="submit" value="Read Records" class="submit">
         </input>
-    `
+    `;
     return readForm;
 };
+
+const syntaxHighlight = (json) => {
+    if (typeof json != 'string') {
+         json = JSON.stringify(json, null, 2);
+    }
+    json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g,  (match) => {
+        var cls = 'number';
+        if (/^"/.test(match)) {
+            if (/:$/.test(match)) {
+                cls = 'key';
+            } else {
+                cls = 'string';
+            }
+        } else if (/true|false/.test(match)) {
+            cls = 'boolean';
+        } else if (/null/.test(match)) {
+            cls = 'null';
+        }
+        return '<span class="' + cls + '">' + match + '</span>';
+    });
+}
+
+const handleFormSubmit = async (e) => {
+    e.preventDefault();
+    // make post request with request body
+    const formData = new FormData(e.target)
+    const formJson = {};
+    [...formData.entries()].forEach((key_value) => {
+        const [key, value] = key_value
+        formJson[key] = value
+    })
+    const response = await fetch("/blockchain", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formJson),
+    });
+    console.log(response);
+    const type = response.headers.get("Content-Type");
+    console.log(type)
+    if (type.includes("application/json")) {
+        const responseBody = await response.json();
+        console.log(responseBody);
+        document.querySelector('.response-content').innerHTML = syntaxHighlight(responseBody);
+    } else if (type.includes("text/html")) {
+        const responseHTML = await response.text();
+        console.log(responseHTML);
+    }
+};
+
 actionElement.addEventListener("change", (e) => {
     console.log(e.target.value);
-    clearForm()
+    clearForm();
     switch (e.target.value) {
-        case 'create_user':
-            formElement.appendChild(createUserElement())
+        case "create_user":
+            formElement.appendChild(createUserElement());
+            formElement.addEventListener("submit", handleFormSubmit);
             break;
-        case 'delete_user':
-            formElement.appendChild(deleteUserElement())
+        case "delete_user":
+            formElement.appendChild(deleteUserElement());
+            formElement.addEventListener("submit", handleFormSubmit);
             break;
-        case 'diagnose':
-            formElement.appendChild(diagnoseElement())
+        case "diagnose":
+            formElement.appendChild(diagnoseElement());
+            formElement.addEventListener("submit", handleFormSubmit);
             break;
-        case 'read':
-            formElement.appendChild(readElement())
+        case "read":
+            formElement.appendChild(readElement());
+            formElement.addEventListener("submit", handleFormSubmit);
             break;
         default:
             break;

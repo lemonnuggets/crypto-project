@@ -16,36 +16,36 @@ def verify(message, signature, public_key):
     """
     Verify the signature of a record.
     """
-    print("Verifying signature...")
+    # print("Verifying signature...")
     if type(message) != str:
-        print("Message is not a string")
-        print(f"Message: {message} is type {type(message)}")
+        # print("Message is not a string")
+        # print(f"Message: {message} is type {type(message)}")
         message = str(message)
     if type(public_key) != int:
-        print("Public key is not an integer")
-        print(f"Public key: {public_key} is type {type(public_key)}")
+        # print("Public key is not an integer")
+        # print(f"Public key: {public_key} is type {type(public_key)}")
         public_key = int(public_key)
-    print("Message:", message, type(message))
-    print("Signature:", signature)
-    print("Public key:", public_key)
+    # print("Message:", message, type(message))
+    # print("Signature:", signature)
+    # print("Public key:", public_key)
     result = dss.verification(message, signature.r, signature.s, public_key)
-    print("Result:", result)
+    # print("Result:", result)
     return result
 
 
 class Signature:
     def __init__(self, data, private_key):
-        print("Signing message...")
+        # print("Signing message...")
         if type(data) != str:
-            print("Message is not a string")
-            print(f"Message: {data} is type {type(data)}")
+            # print("Message is not a string")
+            # print(f"Message: {data} is type {type(data)}")
             data = str(data)
         if type(private_key) != int:
-            print("Private key is not an integer")
-            print(f"Private key: {private_key} is type {type(private_key)}")
+            # print("Private key is not an integer")
+            # print(f"Private key: {private_key} is type {type(private_key)}")
             private_key = int(private_key)
-        print("Message:", data, type(data))
-        print("Private key:", private_key)
+        # print("Message:", data, type(data))
+        # print("Private key:", private_key)
         self.r, self.s, _ = dss.signature(data, private_key)
 
     def get_components(self):
@@ -431,6 +431,7 @@ class BlockchainDB:
             }
 
     def get_user_type(self, public_key=None):
+        print("get_user_type", public_key)
         if public_key is None:
             return {
                 "status": "error",
@@ -442,7 +443,8 @@ class BlockchainDB:
         self.load_last_chunk()
         while self.chunk_no >= 0 and result is None:
             for block in self.blockchain.chain:
-                for record in block.records.reverse():
+                block.records.reverse()
+                for record in block.records:
                     if record.verify() and record.signatory_key == public_key:
                         if record.data["action"] == "create_user":
                             result = {
@@ -478,6 +480,7 @@ class BlockchainDB:
         return result
 
     def get_all_records_involving(self, public_key=None):
+        print("get_all_records_involving", public_key)
         if public_key is None:
             return {
                 "status": "error",
@@ -536,6 +539,7 @@ class BlockchainDB:
             }
 
     def get_records_of(self, public_key=None):
+        print("get_records_of", public_key)
         if public_key is None:
             return {
                 "status": "error",
@@ -581,6 +585,7 @@ class BlockchainDB:
             }
 
     def get_records_signed_by(self, public_key=None):
+        print("get_records_signed_by", public_key)
         if public_key is None:
             return {
                 "status": "error",
@@ -617,6 +622,7 @@ class BlockchainDB:
             }
 
     def get_all_records(self):
+        print("get_all_records")
         try:
             result = []
             prev_chunk_no = self.chunk_no
