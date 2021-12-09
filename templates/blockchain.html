@@ -24,11 +24,17 @@
     .request-form {
         padding: 20px;
     }
+    .create-user-form, .delete-user-form, .diagnose-form, .read-form{
+        display: flex;
+        flex-direction: column;
+    }
 </style>
 <script defer src="{{url_for('static', filename='js/blockchain.js')}}"></script>
 {% endblock %} {% block body %}
 <div class="container">
-    <div class="title">Make Request</div>
+    <div class="title">
+        <h1>Make Request</h1>
+    </div>
     <form action="/blockchain" class="request-form">
         <label for="action" class="action">Select action</label>
         <select name="action" id="action" class="action">

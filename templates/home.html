@@ -22,23 +22,20 @@
         text-decoration: underline;
     }
     .container{
-        width: 90%;
+        width: 70%;
+    }
+    .footer{
+        text-align: center;
+        color: rgb(255, 255, 255);
+        background: #7b33ff;
+        width: 100%;
+        padding: 20px;
     }
 </style>
 {% endblock %} {% block body %}
 <div class="container">
     <img src="{{ url_for('static', filename='assets/HealthBlok.png') }}" alt="Home page pic" style="width: 100%" />
-    <table
-        style="
-            text-align: center;
-            color: rgb(255, 255, 255);
-            font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande',
-                'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
-                width: 100%;
-                height: 20px;
-                background-color: #7b33ff;
-        "
-    >
+    <table class="footer" >
         <tr>
             <td><h3>A Healthy revolution</h3></td>
         </tr>

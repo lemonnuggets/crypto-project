@@ -1,6 +1,6 @@
 import hashlib
 import time
-import dss
+import blockchain.dss as dss
 import pickle
 import os
 import json
@@ -14,17 +14,12 @@ def verify(message, signature, public_key):
     """
     Verify the signature of a record.
     """
-    # print("Verifying", message, json.dumps(message), signature, public_key)
     return dss.verification(message, signature.r, signature.s, public_key)
 
 
 class Signature:
     def __init__(self, data, private_key):
-        # print("Signing the data...")
-        # print(json.dumps(data))
-        # print(private_key)
         self.r, self.s, _ = dss.signature(data, private_key)
-        # print("Signature is: ", self)
 
     def get_components(self):
         return self.r, self.s
@@ -35,22 +30,30 @@ class Signature:
 
 class Record:
     def __init__(self, signatory_key, signature, data) -> None:
+        self.timestamp = time.time()
         self.signatory_key = signatory_key
         self.data = data
         self.signature = signature
 
     def __str__(self) -> str:
-        return f"{self.signatory_key};{self.signature};{json.dumps(self.data)}"
+        return f"{self.timestamp}{self.signatory_key};{self.signature};{json.dumps(self.data)}"
 
     def verify(self) -> bool:
         return verify(self.data, self.signature, self.signatory_key)
+
+    def toJSON(self):
+        return json.loads(
+            json.dumps(self, default=lambda o: o.__dict__, sort_keys=True, indent=4)
+        )
 
 
 class User:
     def __init__(self, name, public_key=None, private_key=None):
         self.name = name
-        if public_key is None or private_key is None:
+        if public_key is None and private_key is None:
             self.private_key, self.public_key = dss.userKeys()
+        elif public_key is not None:
+            self.public_key = public_key
 
     def sign(self, data):
         return Signature(data, self.private_key)
@@ -93,11 +96,6 @@ class Block:
         return result
 
     def hash_block(self):
-        # print(str(self.index))
-        # print(str(self.timestamp))
-        # print(str(self.previous_hash))
-        # print(str(self.nonce))
-        # print(self.record_to_string())
         sha = hashlib.sha256()
         sha.update(
             f"{str(self.index)}{str(self.timestamp)}{str(self.timestamp)}{self.record_to_string()}{str(self.previous_hash)}{str(self.nonce)}".encode(
@@ -110,7 +108,6 @@ class Block:
         while self.hash[:difficulty] != "0" * difficulty:
             self.nonce += 1
             self.hash = self.hash_block()
-            # print(self.hash, self.nonce)
 
     def __str__(self) -> str:
         return "Block:\n\tIndex = {0},\n\tTimestamp = {1},\n\tRecords: {2},\n\tPrevious Hash = {3},\n\tHash = {4},\n\tNonce = {5}".format(
@@ -169,68 +166,6 @@ class BlockchainDB:
             os.mkdir(dir_path)
         self.load_last_chunk()
 
-    def get_records_of(self, public_key):
-        # try:
-        result = []
-        prev_chunk_no = self.chunk_no
-        self.load_last_chunk()
-        while self.chunk_no >= 0:
-            print(self.chunk_no, len(result))
-            for block in self.blockchain.chain:
-                for record in block.records:
-                    try:
-                        data = json.loads(record.data)
-                    except:
-                        data = record.data
-                    if (
-                        record.verify()
-                        and data
-                        and "public key" in data
-                        and data["public key"] == public_key
-                    ):
-                        result.append(record)
-            self.chunk_no -= 1
-            if self.chunk_no >= 0:
-                self.blockchain = pickle.load(
-                    open(self.get_chunk_path(self.chunk_no), "rb")
-                )
-        self.chunk_no = prev_chunk_no
-        return {
-            "status": "success",
-            "data": result,
-        }
-        # except Exception as e:
-        #     return {
-        #         "status": "error",
-        #         "message": "Error reading user records",
-        #     }
-
-    def get_records_signed_by(self, public_key):
-        try:
-            result = []
-            prev_chunk_no = self.chunk_no
-            self.load_last_chunk()
-            while self.chunk_no >= 0:
-                for block in self.blockchain.chain:
-                    for record in block.records:
-                        if record.verify() and record.signatory_key == public_key:
-                            result.append(record)
-                self.chunk_no -= 1
-                if self.chunk_no >= 0:
-                    self.blockchain = pickle.load(
-                        open(self.get_chunk_path(self.chunk_no), "rb")
-                    )
-            self.chunk_no = prev_chunk_no
-            return {
-                "status": "success",
-                "data": result,
-            }
-        except Exception as e:
-            return {
-                "status": "error",
-                "message": "Error reading user records",
-            }
-
     def get_chunk_path(self, chunk_no):
         return self.dir_path + "/" + str(chunk_no) + ".pickle"
 
@@ -245,9 +180,7 @@ class BlockchainDB:
             self.chunk_no = 0
             self.blockchain = Blockchain()
             return
-        # print(f"loading chunk {self.chunk_no}")
         self.blockchain = pickle.load(open(self.get_chunk_path(self.chunk_no), "rb"))
-        # print(self.blockchain)
 
     def save_last_chunk(self):
         pickle.dump(self.blockchain, open(self.get_chunk_path(self.chunk_no), "wb"))
@@ -266,7 +199,7 @@ class BlockchainDB:
         )
 
     def add_record(self, signature, public_key, data):
-        possible_actions = ("create user", "delete user", "diagnose")
+        possible_actions = ("create_user", "delete_user", "diagnose", "read")
         if len(self.blockchain.chain) >= MAX_CHUNK_SIZE:
             self.start_next_chunk()
         if "action" not in data:
@@ -282,28 +215,28 @@ class BlockchainDB:
                 "message": "Action is not valid",
                 "error_code": "3",
             }
-        if action == "create user":
+        if action == "create_user":
             if "name" not in data:
                 return {
                     "status": "error",
                     "message": "Name is not provided",
                     "error_code": "4",
                 }
-            if "public key" not in data:
+            if "public_key" not in data:
                 return {
                     "status": "error",
                     "message": "Public key is not provided",
                     "error_code": "5",
                 }
-        if action == "delete user":
-            if "public key" not in data:
+        if action == "delete_user":
+            if "public_key" not in data:
                 return {
                     "status": "error",
                     "message": "Public key is not provided",
                     "error_code": "5",
                 }
         if action == "diagnose":
-            if "public key" not in data:
+            if "public_key" not in data:
                 return {
                     "status": "error",
                     "message": "Public key is not provided",
@@ -316,86 +249,334 @@ class BlockchainDB:
                     "error_code": "6",
                 }
         record = Record(public_key, signature, json.dumps(data))
-        # print(record)
         response = self.add_to_blockchain(record)
         if response["status"] == "error":
             return response
         self.save_last_chunk()
         return response
 
+    def add_user(self, name=None, privilege_level=None, type=None):
+        if name is None:
+            return {
+                "status": "error",
+                "message": "Name is not provided",
+                "error_code": "4",
+            }
+        if privilege_level is None:
+            return {
+                "status": "error",
+                "message": "Privilege level is not provided",
+                "error_code": "8",
+            }
+        if type is None:
+            return {
+                "status": "error",
+                "message": "Type is not provided",
+                "error_code": "9",
+            }
+        user = User(name)
+        public_key = user.get_public_key()
+        self.users.add(public_key)
+        data = {
+            "action": "create_user",
+            "name": name,
+            "public_key": public_key,
+            "privilege_level": privilege_level,
+            "type": type,
+        }
+        signature = user.sign(data)
+        response = self.add_record(signature, public_key, data)
+        if response["status"] == "error":
+            return response
+        else:
+            return {
+                "status": "success",
+                "message": "User created",
+                "data": {
+                    "public_key": public_key,
+                    "private key": user.get_private_key(),
+                    "action": "create_user",
+                    "name": name,
+                },
+                "error_code": "0",
+            }
 
-if __name__ == "__main__":
-    # blockchain = Blockchain()
+    def add_diagnosis(
+        self,
+        doctor_private_key=None,
+        doctor_public_key=None,
+        patient_public_key=None,
+        diagnosis=None,
+    ):
+        if doctor_private_key is None:
+            return {
+                "status": "error",
+                "message": "Doctor private key is not provided",
+                "error_code": "6",
+            }
+        if doctor_public_key is None:
+            return {
+                "status": "error",
+                "message": "Doctor public key is not provided",
+                "error_code": "5",
+            }
+        if patient_public_key is None:
+            return {
+                "status": "error",
+                "message": "Patient public key is not provided",
+                "error_code": "5",
+            }
+        if diagnosis is None:
+            return {
+                "status": "error",
+                "message": "Diagnosis is not provided",
+                "error_code": "7",
+            }
+        data = {
+            "action": "diagnose",
+            "public_key": patient_public_key,
+            "diagnosis": diagnosis,
+        }
+        signature = Signature(data, doctor_private_key)
+        return self.add_record(signature, doctor_public_key, data)
 
-    # adam = User("Adam")
-    # message = "Hello, world!"
-    # signature = adam.sign(message)
-    # blockchain.add_record(message, signature, adam.get_public_key())
+    def delete_user(
+        self,
+        public_key=None,
+        private_key=None,
+    ):
+        if public_key is None:
+            return {
+                "status": "error",
+                "message": "Public key is not provided",
+                "error_code": "5",
+            }
+        if private_key is None:
+            return {
+                "status": "error",
+                "message": "Private key is not provided",
+                "error_code": "6",
+            }
+        data = {"action": "delete_user", "public_key": public_key}
+        signature = Signature(data, private_key)
+        self.users.remove(public_key)
+        return self.add_record(signature, public_key, data)
 
-    # preet = User("Preet")
-    # message = "Hello, world!"
-    # signature = preet.sign(message)
-    # blockchain.add_block(message, signature, preet.get_public_key())
+    def get_user_type(self, public_key=None):
+        if public_key is None:
+            return {
+                "status": "error",
+                "message": "Public key is not provided",
+                "error_code": "5",
+            }
+        result = None
+        prev_chunk_no = self.chunk_no
+        self.load_last_chunk()
+        while self.chunk_no >= 0 and result is None:
+            for block in self.blockchain.chain:
+                for record in block.records.reverse():
+                    if record.verify() and record.signatory_key == public_key:
+                        if record.data["action"] == "create_user":
+                            result = {
+                                "status": "success",
+                                "message": "User found",
+                                "data": {
+                                    "type": record.data["type"],
+                                },
+                                "error_code": "0",
+                            }
+                        elif record.data["action"] == "delete_user":
+                            result = {
+                                "status": "error",
+                                "message": "User deleted",
+                                "error_code": "1",
+                            }
+                    if result is not None:
+                        break
+                if result is not None:
+                    break
+            self.chunk_no -= 1
+            if self.chunk_no >= 0:
+                self.blockchain = pickle.load(
+                    open(self.get_chunk_path(self.chunk_no), "rb")
+                )
+        self.chunk_no = prev_chunk_no
+        if result is None:
+            result = {
+                "status": "error",
+                "message": "User not found",
+                "error_code": "1",
+            }
+        return result
 
-    # aditya = User("Aditya")
-    # message = "Hello, world!"
-    # signature = aditya.sign(message)
-    # blockchain.add_block(message, signature, aditya.get_public_key())
+    def get_all_records_involving(self, public_key=None):
+        if public_key is None:
+            return {
+                "status": "error",
+                "message": "Public key is not provided",
+                "error_code": "5",
+            }
+        try:
+            result = []
+            prev_chunk_no = self.chunk_no
+            self.load_last_chunk()
+            while self.chunk_no >= 0:
+                for block in self.blockchain.chain:
+                    for record in block.records:
+                        try:
+                            data = json.loads(record.data)
+                        except:
+                            data = record.data
+                        if record.verify():
+                            if record.signatory_key == public_key:
+                                result.append(record.toJSON())
+                            if (
+                                data
+                                and "public_key" in data
+                                and data["public_key"] == public_key
+                            ):
+                                result.append(record.toJSON())
+                self.chunk_no -= 1
+                if self.chunk_no >= 0:
+                    self.blockchain = pickle.load(
+                        open(self.get_chunk_path(self.chunk_no), "rb")
+                    )
+            self.chunk_no = prev_chunk_no
+            return {
+                "status": "success",
+                "message": "Records found",
+                "data": result,
+                "error_code": "0",
+            }
+        except Exception as e:
+            return {
+                "status": "error",
+                "message": "Error reading user records",
+                "error_code": "2",
+                "error": str(e),
+            }
 
-    # ibrahim = User("Ibrahim")
-    # message = "Hello, world!"
-    # signature = ibrahim.sign(message)
-    # blockchain.add_block(message, signature, ibrahim.get_public_key())
+    def get_records_of(self, public_key=None):
+        if public_key is None:
+            return {
+                "status": "error",
+                "message": "Public key is not provided",
+                "error_code": "5",
+            }
+        try:
+            result = []
+            prev_chunk_no = self.chunk_no
+            self.load_last_chunk()
+            while self.chunk_no >= 0:
+                for block in self.blockchain.chain:
+                    for record in block.records:
+                        try:
+                            data = json.loads(record.data)
+                        except:
+                            data = record.data
+                        if record.verify():
+                            if (
+                                data
+                                and "public_key" in data
+                                and data["public_key"] == public_key
+                            ):
+                                result.append(record.toJSON())
+                self.chunk_no -= 1
+                if self.chunk_no >= 0:
+                    self.blockchain = pickle.load(
+                        open(self.get_chunk_path(self.chunk_no), "rb")
+                    )
+            self.chunk_no = prev_chunk_no
+            return {
+                "status": "success",
+                "message": "Records found",
+                "data": result,
+                "error_code": "0",
+            }
+        except Exception as e:
+            return {
+                "status": "error",
+                "message": "Error reading user records",
+                "error": str(e),
+                "error_code": "2",
+            }
 
-    # print(adam)
-    # print(preet)
-    # print(aditya)
-    # print(ibrahim)
-    # print(blockchain)
-    # user = User("USER 0")
-    # print(user)
-    # message = "Hello, world!"
-    # print(verify(message, user.sign(message), user.get_public_key()))
-    db = BlockchainDB("blockchain")
-    adam = User("Adam")
-    data = {
-        "name": adam.name,
-        "public key": adam.get_public_key(),
-        "designation": "doctor",
-        "action": "create user",
-    }
-    response = db.add_record(adam.sign(json.dumps(data)), adam.get_public_key(), data)
-    # print(adam)
-    # print(data)
-    # print(response)
+    def get_records_signed_by(self, public_key=None):
+        if public_key is None:
+            return {
+                "status": "error",
+                "message": "No public key provided",
+                "error_code": "5",
+            }
+        try:
+            result = []
+            prev_chunk_no = self.chunk_no
+            self.load_last_chunk()
+            while self.chunk_no >= 0:
+                for block in self.blockchain.chain:
+                    for record in block.records:
+                        if record.verify() and record.signatory_key == public_key:
+                            result.append(record.toJSON())
+                self.chunk_no -= 1
+                if self.chunk_no >= 0:
+                    self.blockchain = pickle.load(
+                        open(self.get_chunk_path(self.chunk_no), "rb")
+                    )
+            self.chunk_no = prev_chunk_no
+            return {
+                "status": "success",
+                "message": "Records found",
+                "data": result,
+                "error_code": "0",
+            }
+        except Exception as e:
+            return {
+                "status": "error",
+                "message": "Error reading user records",
+                "error": str(e),
+                "error_code": "2",
+            }
 
-    preet = User("Preet")
-    data = {
-        "name": preet.name,
-        "public key": preet.get_public_key(),
-        "designation": "patient",
-        "action": "create user",
-    }
-    response = db.add_record(adam.sign(json.dumps(data)), adam.get_public_key(), data)
-    # print(preet)
-    # print(data)
-    # print(response)
+    def get_all_records(self):
+        try:
+            result = []
+            prev_chunk_no = self.chunk_no
+            self.load_last_chunk()
+            while self.chunk_no >= 0:
+                for block in self.blockchain.chain:
+                    for record in block.records:
+                        if record.verify():
+                            result.append(record.toJSON())
+                self.chunk_no -= 1
+                if self.chunk_no >= 0:
+                    self.blockchain = pickle.load(
+                        open(self.get_chunk_path(self.chunk_no), "rb")
+                    )
+            self.chunk_no = prev_chunk_no
+            return {
+                "status": "success",
+                "message": "Records found",
+                "data": result,
+                "error_code": "0",
+            }
+        except Exception as e:
+            return {
+                "status": "error",
+                "message": "Error reading records",
+                "error": str(e),
+                "error_code": "2",
+            }
 
-    data = {
-        "public key": preet.get_public_key(),
-        "action": "diagnose",
-        "diagnosis": "cold",
-    }
-    response = db.add_record(adam.sign(json.dumps(data)), adam.get_public_key(), data)
-    # print(data)
-    # print(response)
-    response = db.get_records_signed_by(adam.get_public_key())
-    print(response["data"])
-    response = db.get_records_signed_by(preet.get_public_key())
-    print(response["data"])
-    response = db.get_records_of(adam.get_public_key())
-    print(response)
-    print(response["data"])
-    response = db.get_records_of(preet.get_public_key())
-    print(response)
-    print(response["data"])
+    def read_records(self, public_key=None):
+        if public_key is None:
+            return self.get_all_records()
+        user_type = self.get_user_type(public_key)
+        if user_type["status"] == "error":
+            return user_type
+        user_type = user_type["data"]["type"]
+        if user_type == "doctor":
+            return self.get_records_signed_by(public_key)
+        elif user_type == "patient":
+            return self.get_records_of(public_key)
+        else:
+            return self.get_all_records_involving(public_key)

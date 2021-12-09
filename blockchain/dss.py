@@ -8,6 +8,8 @@ G = 0
 
 
 def hashGen(message):
+    if type(message) != str:
+        message = str(message)
     # returns the hash value of the 'message' using sha256
     return sha256(message.encode("UTF-8")).hexdigest()
 
