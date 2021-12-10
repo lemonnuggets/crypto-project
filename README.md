@@ -4,7 +4,7 @@ This was made as project for our teams CSE1011 - Cryptography Fundamentals cours
 
 ## The Team
 
-Adam N Jijo
-Aditya Jha
-Mohamed Ibrahim
-Preet Aryan Gupta
+1. Adam N Jijo
+2. Aditya Jha
+3. Mohamed Ibrahim
+4. Preet Aryan Gupta
