@@ -1,4 +1,5 @@
-from flask import Flask, render_template, url_for, request, redirect
+from flask import Flask, redirect, render_template, request
+
 from blockchain.blockchain import BlockchainDB
 
 app = Flask(__name__)
@@ -25,61 +26,45 @@ def about():
 def blockchain():
     if request.method == "POST":
         print(request, request.get_data())
-        if request.json:
-            print(request.json)
+        content = {}
+        if request.is_json:
+            print("request.json")
             content = request.get_json()
-            print(content)
-            if content["action"] == "create_user":
-                print("create user")
-                return db.add_user(
-                    content["name"],
-                    int(content["privilege_level"]),
-                    content["type"],
-                )
-            if content["action"] == "delete_user":
-                print("delete user")
-                return db.delete_user(
-                    int(content["public_key"]),
-                    int(content["private_key"]),
-                )
-            if content["action"] == "diagnose":
-                print("diagnose")
-                return db.add_diagnosis(
-                    int(content["doc_public_key"]),
-                    int(content["doc_private_key"]),
-                    int(content["public_key"]),
-                    content["diagnosis"],
-                )
-            if content["action"] == "read":
-                print("read")
-                return db.read_records(int(content["public_key"]))
         else:
-            print(request.form.to_dict())
-            print(request.form)
-            if request.form.get("action") == "create_user":
-                print("create user")
-                return db.add_user(
-                    request.form.get("name"),
-                    int(request.form.get("privilege_level")),
-                    request.form.get("type"),
-                )
-            if request.form.get("action") == "delete_user":
-                print("delete user")
-                return db.delete_user(
-                    int(request.form.get("public_key")),
-                    int(request.form.get("private_key")),
-                )
-            if request.form.get("action") == "diagnose":
-                print("diagnose")
-                return db.add_diagnosis(
-                    int(request.form.get("doc_public_key")),
-                    int(request.form.get("doc_private_key")),
-                    int(request.form.get("public_key")),
-                    request.form.get("diagnosis"),
-                )
-            if request.form.get("action") == "read":
-                print("read")
-                return db.read_records(int(request.form.get("public_key")))
+            print("request.form")
+            content = request.form.to_dict()
+        print(content)
+        if content["action"] == "create_user":
+            print("create user")
+            return db.add_user(
+                content["name"],
+                content["type"],
+            )
+        if content["action"] == "delete_user":
+            print("delete user")
+            return db.delete_user(
+                int(content["public_key"]),
+                int(content["private_key"]),
+            )
+        if content["action"] == "donate":
+            print("donate")
+            return db.add_donation(
+                doctor_private_key=int(content["doc_private_key"]),
+                doctor_public_key=int(content["doc_public_key"]),
+                donor_public_key=int(content["public_key"]),
+                organ_type=content["organ_type"],
+            )
+        if content["action"] == "recieve":
+            print("recieve")
+            return db.add_recieve_record(
+                doctor_public_key=int(content["doc_public_key"]),
+                doctor_private_key=int(content["doc_private_key"]),
+                patient_public_key=int(content["public_key"]),
+                organ_type=content["organ_type"],
+            )
+            # if content["action"] == "read":
+            #     print("read")
+            #     return db.read_records(int(content["public_key"]))
     return render_template("blockchain.html")
 
 

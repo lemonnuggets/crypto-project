@@ -1,11 +1,11 @@
 import hashlib
-import time
-
-from Crypto.Util import number
-import blockchain.dss as dss
-import pickle
-import os
 import json
+import os
+import pickle
+import time
+import uuid
+
+import blockchain.dss as dss
 
 DIFFICULTY = 4
 MAX_BLOCK_SIZE = 2
@@ -16,36 +16,27 @@ def verify(message, signature, public_key):
     """
     Verify the signature of a record.
     """
-    # print("Verifying signature...")
     if type(message) != str:
-        # print("Message is not a string")
-        # print(f"Message: {message} is type {type(message)}")
         message = str(message)
     if type(public_key) != int:
-        # print("Public key is not an integer")
-        # print(f"Public key: {public_key} is type {type(public_key)}")
         public_key = int(public_key)
-    # print("Message:", message, type(message))
-    # print("Signature:", signature)
-    # print("Public key:", public_key)
     result = dss.verification(message, signature.r, signature.s, public_key)
-    # print("Result:", result)
     return result
 
 
 class Signature:
     def __init__(self, data, private_key):
-        # print("Signing message...")
+        print("Signing message...")
         if type(data) != str:
-            # print("Message is not a string")
-            # print(f"Message: {data} is type {type(data)}")
+            print("Message is not a string")
+            print(f"Message: {data} is type {type(data)}")
             data = str(data)
         if type(private_key) != int:
-            # print("Private key is not an integer")
-            # print(f"Private key: {private_key} is type {type(private_key)}")
+            print("Private key is not an integer")
+            print(f"Private key: {private_key} is type {type(private_key)}")
             private_key = int(private_key)
-        # print("Message:", data, type(data))
-        # print("Private key:", private_key)
+        print("Message:", data, type(data))
+        print("Private key:", private_key)
         self.r, self.s, _ = dss.signature(data, private_key)
 
     def get_components(self):
@@ -163,7 +154,9 @@ class Blockchain:
         self.chain.append(genesis_block)
 
     def add_record(self, data, signature, public_key):
+        print("adding record", data, signature, public_key)
         record = Record(public_key, signature, data)
+        print("record", record, record.verify())
         if len(self.chain) == 0:
             prev_hash = self.initial_hash
         else:
@@ -223,15 +216,13 @@ class BlockchainDB:
         self.users.clear()
         self.blockchain = Blockchain(self.blockchain.chain[-1].hash)
 
-    def add_to_blockchain(self, record):
+    def add_to_blockchain(self, data, signature, signatory_key):
         if len(self.blockchain.chain) >= MAX_CHUNK_SIZE:
             self.start_next_chunk()
-        return self.blockchain.add_record(
-            record.data, record.signature, record.signatory_key
-        )
+        return self.blockchain.add_record(data, signature, signatory_key)
 
     def add_record(self, signature, public_key, data):
-        possible_actions = ("create_user", "delete_user", "diagnose", "read")
+        possible_actions = ("create_user", "delete_user", "donate", "recieve")
         if len(self.blockchain.chain) >= MAX_CHUNK_SIZE:
             self.start_next_chunk()
         if "action" not in data:
@@ -248,6 +239,12 @@ class BlockchainDB:
                 "error_code": "3",
             }
         if action == "create_user":
+            if "type" not in data:
+                return {
+                    "status": "error",
+                    "message": "User type is not provided",
+                    "error_code": "4",
+                }
             if "name" not in data:
                 return {
                     "status": "error",
@@ -267,43 +264,60 @@ class BlockchainDB:
                     "message": "Public key is not provided",
                     "error_code": "5",
                 }
-        if action == "diagnose":
+        if action == "recieve":
             if "public_key" not in data:
                 return {
                     "status": "error",
                     "message": "Public key is not provided",
                     "error_code": "5",
                 }
-            if "diagnosis" not in data:
+            if "organ_id" not in data:
                 return {
                     "status": "error",
-                    "message": "Diagnosis is not provided",
+                    "message": "Organ id is not provided",
                     "error_code": "6",
                 }
-        record = Record(public_key, signature, data)
-        response = self.add_to_blockchain(record)
+        if action == "donate":
+            if "public_key" not in data:
+                return {
+                    "status": "error",
+                    "message": "Public key is not provided",
+                    "error_code": "5",
+                }
+            if "organ_type" not in data:
+                return {
+                    "status": "error",
+                    "message": "Organ type is not provided",
+                    "error_code": "6",
+                }
+            if "organ_id" not in data:
+                return {
+                    "status": "error",
+                    "message": "Organ id is not provided",
+                    "error_code": "6",
+                }
+            # organ_details optional
+        # record = Record(public_key, signature, data)
+        print("adding to blockchain", data, signature, public_key)
+        response = self.add_to_blockchain(
+            data=data, signature=signature, signatory_key=public_key
+        )
         if response["status"] == "error":
             return response
         self.save_last_chunk()
         return response
 
-    def add_user(self, name=None, privilege_level=None, type=None):
+    def add_user(self, name=None, user_type=None):
         if name is None:
             return {
                 "status": "error",
                 "message": "Name is not provided",
                 "error_code": "4",
             }
-        if privilege_level is None:
+        if user_type is None:
             return {
                 "status": "error",
-                "message": "Privilege level is not provided",
-                "error_code": "8",
-            }
-        if type is None:
-            return {
-                "status": "error",
-                "message": "Type is not provided",
+                "message": "User Type is not provided",
                 "error_code": "9",
             }
         user = User(name)
@@ -313,8 +327,7 @@ class BlockchainDB:
             "action": "create_user",
             "name": name,
             "public_key": public_key,
-            "privilege_level": privilege_level,
-            "type": type,
+            "type": user_type,
         }
         signature = user.sign(data)
         response = self.add_record(signature, public_key, data)
@@ -327,18 +340,19 @@ class BlockchainDB:
                 "data": {
                     "public_key": public_key,
                     "private key": user.private_key,
+                    "type": user_type,
                     "action": "create_user",
                     "name": name,
                 },
                 "error_code": "0",
             }
 
-    def add_diagnosis(
+    def add_recieve_record(
         self,
-        doctor_private_key=None,
         doctor_public_key=None,
+        doctor_private_key=None,
         patient_public_key=None,
-        diagnosis=None,
+        organ_type=None,
     ):
         if doctor_private_key is None:
             return {
@@ -358,18 +372,75 @@ class BlockchainDB:
                 "message": "Patient public key is not provided",
                 "error_code": "5",
             }
-        if diagnosis is None:
+        if organ_type is None:
             return {
                 "status": "error",
-                "message": "Diagnosis is not provided",
+                "message": "Organ Type is not provided",
+                "error_code": "7",
+            }
+        available_organs = self.get_available_organs_of_type(organ_type=organ_type)
+        if "data" in available_organs:
+            print("available organs", available_organs)
+            available_organs = list(available_organs["data"])
+            if len(available_organs) <= 0:
+                return {
+                    "status": "error",
+                    "message": "No available organs",
+                    "error_code": "10",
+                }
+            data = {
+                "action": "recieve",
+                "public_key": patient_public_key,
+                "organ_id": available_organs[0]["organ_id"],
+            }
+            signature = Signature(data, doctor_private_key)
+            result = self.add_record(signature, doctor_public_key, data)
+            if result["status"] == "error":
+                return result
+            return {"status": "success", "data": data, "message": "Added successfully."}
+        return available_organs
+
+    def add_donation(
+        self,
+        doctor_private_key=None,
+        doctor_public_key=None,
+        donor_public_key=None,
+        organ_type=None,
+    ):
+        if doctor_private_key is None:
+            return {
+                "status": "error",
+                "message": "Doctor private key is not provided",
+                "error_code": "6",
+            }
+        if doctor_public_key is None:
+            return {
+                "status": "error",
+                "message": "Doctor public key is not provided",
+                "error_code": "5",
+            }
+        if donor_public_key is None:
+            return {
+                "status": "error",
+                "message": "Patient public key is not provided",
+                "error_code": "5",
+            }
+        if organ_type is None:
+            return {
+                "status": "error",
+                "message": "Organ Type is not provided",
                 "error_code": "7",
             }
         data = {
-            "action": "diagnose",
-            "public_key": patient_public_key,
-            "diagnosis": diagnosis,
+            "action": "donate",
+            "public_key": donor_public_key,
+            "organ_type": organ_type,
+            "organ_id": str(uuid.uuid4()),
         }
+        print("donating", data)
         signature = Signature(data, doctor_private_key)
+        record = Record(doctor_public_key, signature, data)
+        print("record", record, record.verify())
         return self.add_record(signature, doctor_public_key, data)
 
     def delete_user(
@@ -401,7 +472,7 @@ class BlockchainDB:
             }
         print("Fetched records: ", records["data"])
         print("Type of fetched records: ", type(records["data"][0]))
-        print("fetched record: ", records["data"][0])
+        print("Fetched record: ", records["data"][0])
         records["data"].sort(key=lambda x: x["timestamp"])
         for record in records["data"][::-1]:
             if record["data"]["action"] == "delete_user":
@@ -479,6 +550,119 @@ class BlockchainDB:
             }
         return result
 
+    def get_available_organs_of_type(self, organ_type=None):
+        print("get_organs_of_type", organ_type)
+        if organ_type is None:
+            return {
+                "status": "error",
+                "message": "Organ Type is not provided",
+                "error_code": "5",
+            }
+        try:
+            result = []
+            prev_chunk_no = self.chunk_no
+            self.load_last_chunk()
+            while self.chunk_no >= 0:
+                for block in self.blockchain.chain:
+                    for record in block.records:
+                        try:
+                            data = json.loads(record.data)
+                        except:
+                            data = record.data
+                        if record.verify():
+                            if (
+                                (not data)
+                                or ("action" not in data)
+                                or (
+                                    "action" in data
+                                    and data["action"] not in ("donate", "recieve")
+                                )
+                            ):
+                                continue
+                            print("checking", data)
+                            if (
+                                data["action"] == "donate"
+                                and "organ_type" in data
+                                and data["organ_type"] == organ_type
+                            ):
+                                print("Adding data: ", data)
+                                result.append(data)
+                            if data["action"] == "recieve" and "organ_id" in data:
+                                print("Removing organ: ", data["organ_id"])
+                                result = list(
+                                    filter(
+                                        lambda d: d["organ_id"] != data["organ_id"],
+                                        result,
+                                    )
+                                )
+                self.chunk_no -= 1
+                if self.chunk_no >= 0:
+                    self.blockchain = pickle.load(
+                        open(self.get_chunk_path(self.chunk_no), "rb")
+                    )
+            self.chunk_no = prev_chunk_no
+            return {
+                "status": "success",
+                "message": "Records found",
+                "data": result,
+                "error_code": "0",
+            }
+        except Exception as e:
+            return {
+                "status": "error",
+                "message": "Error reading organ records",
+                "error_code": "2",
+                "error": str(e),
+            }
+
+    def get_organs_of_type(self, organ_type=None):
+        print("get_organs_of_type", organ_type)
+        if organ_type is None:
+            return {
+                "status": "error",
+                "message": "Organ Type is not provided",
+                "error_code": "5",
+            }
+        try:
+            result = []
+            prev_chunk_no = self.chunk_no
+            self.load_last_chunk()
+            while self.chunk_no >= 0:
+                for block in self.blockchain.chain:
+                    for record in block.records:
+                        try:
+                            data = json.loads(record.data)
+                        except:
+                            data = record.data
+                        if record.verify():
+                            if (
+                                data
+                                and "donate" in data
+                                and "organ_type" in data
+                                and data["organ_type"] == organ_type
+                            ):
+                                print("Adding data: ", data)
+                                result.append(data)
+                self.chunk_no -= 1
+                if self.chunk_no >= 0:
+                    self.blockchain = pickle.load(
+                        open(self.get_chunk_path(self.chunk_no), "rb")
+                    )
+            self.chunk_no = prev_chunk_no
+            return {
+                "status": "success",
+                "message": "Records found",
+                "data": result,
+                "error_code": "0",
+            }
+        except Exception as e:
+            return {
+                "status": "error",
+                "message": "Error reading organ records",
+                "error_code": "2",
+                "error": str(e),
+            }
+
     def get_all_records_involving(self, public_key=None):
         print("get_all_records_involving", public_key)
         if public_key is None:
@@ -499,16 +683,6 @@ class BlockchainDB:
                         except:
                             data = record.data
                         if record.verify():
-                            print(
-                                "record.signatory_key: ",
-                                record.signatory_key,
-                                type(record.signatory_key),
-                            )
-                            print("public_key: ", public_key, type(public_key))
-                            print(
-                                "record.signatory_key == public_key: ",
-                                record.signatory_key == public_key,
-                            )
                             if record.signatory_key == public_key:
                                 print("Adding record: ", record.toJSON())
                                 result.append(record.toJSON())
